@@ -1,4 +1,4 @@
-/* Ukrainian Sources 0.1.1. No script evaluation, third-party proxies or credential storage. */
+/* Ukrainian Sources 0.1.2. No script evaluation, third-party proxies or credential storage. */
 (function (root, factory) {
     var core = factory();
     if (typeof module === 'object' && module.exports) module.exports = core;

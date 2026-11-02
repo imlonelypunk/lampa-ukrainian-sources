@@ -1,6 +1,6 @@
 {
   "name": "lampa-ukrainian-sources",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "One local Lampa plugin for UASerials, UAKino and Teleportal",
   "scripts": {

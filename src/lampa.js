@@ -56,6 +56,7 @@
             function focus() {
                 if (!alive || !active || !L.Controller) return;
                 var render = scroll ? scroll.render() : jq(page);
+                if (L.Layer && L.Layer.update) L.Layer.update(render);
                 L.Controller.collectionSet(render);
                 L.Controller.collectionFocus(lastFocus || false, render);
             }
@@ -179,7 +180,7 @@
                     note('UASerials, UAKino та Teleportal. Доступність каталогу й відео залежить від сайту та вашої мережі.');
                     row('Пошук у трьох джерелах', 'Одночасний пошук фільмів, серіалів і шоу', function () { search(null); });
                     Core.providers.forEach(function (p) { row(p.name, p.id === 'teleportal' ? 'Пошук шоу, сезонів і серій' : 'Каталог і пошук', function () { push({ mode: 'catalog', provider: p.id, title: p.name, page: 1 }); }); });
-                    note('Версія 0.1.1');
+                    note('Версія 0.1.2');
                     operation = Promise.resolve();
                 } else if (params.mode === 'catalog') {
                     row('Пошук у ' + Core.provider(params.provider).name, params.query || 'Ввести назву', function () { search(params.provider); });
@@ -211,6 +212,9 @@
             this.create = function () {
                 if (!page) {
                     scroll = typeof L.Scroll === 'function' ? new L.Scroll({ mask: true, over: true }) : null;
+                    // Bound the viewport below Lampa's header; an auto-height
+                    // scroll grows with the results and clamps every move to 0.
+                    if (scroll && typeof scroll.minus === 'function') scroll.minus();
                     page = scroll ? scroll.render(true) : element('div');
                     content = element('div', 'ua3-page');
                     if (scroll) scroll.append(jq(content)); else page.appendChild(content);

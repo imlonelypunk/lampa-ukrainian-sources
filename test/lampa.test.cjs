@@ -10,12 +10,30 @@ const flush = async () => { await new Promise(setImmediate); await new Promise(s
 
 function harness(ready = true, jquery = false) {
     const { document, Event } = parseHTML('<html><head></head><body></body></html>');
-    const requests = [], components = {}, controllers = {}, menus = [], calls = [], listeners = {}, timers = new Map(); let timerId = 0;
+    const requests = [], components = {}, controllers = {}, menus = [], calls = [], listeners = {}, timers = new Map(), scrolls = []; let timerId = 0;
     const L = {
         Component: { add: (name, ctor) => { calls.push('register'); components[name] = ctor; } },
         Menu: { addButton: (icon, name, action) => menus.push({ name, action }) },
         Listener: { follow: (name, fn) => { (listeners[name] ||= []).push(fn); } },
-        Scroll: function () { const root = document.createElement('div'); this.render = () => root; this.append = node => root.appendChild(node); this.update = () => {}; this.destroy = () => root.remove(); },
+        Scroll: function () {
+            const root = document.createElement('div'); let position = 0;
+            this.render = () => root;
+            this.append = node => root.appendChild(node);
+            this.minus = () => root.classList.add('layer--wheight');
+            // Model the native Scroll clamp: an unbounded root grows to its
+            // content height, so there is no overflow and the offset stays 0.
+            this.update = node => {
+                const rows = [...root.querySelectorAll('.ua3-row')];
+                const height = rows.length * 100 + 120;
+                const viewport = Number.parseFloat(root.style.height) || height;
+                const rowTop = 80 + rows.indexOf(node) * 100;
+                position = Math.max(0, Math.min(height - viewport, rowTop + 50 - viewport / 2));
+            };
+            this.position = () => position;
+            this.destroy = () => root.remove();
+            scrolls.push(this);
+        },
+        Layer: { update: root => { if (root.classList.contains('layer--wheight')) root.style.height = '600px'; } },
         Controller: { add: (name, value) => { controllers[name] = value; }, collectionSet() {}, collectionFocus(last) { assert.ok(!last || last.nodeType === 1); if (last) calls.push({ focused: last }); }, toggle: name => { calls.push('toggle:' + name); if (controllers[name]) controllers[name].toggle(); } },
         Reguest: function () { this.cleared = 0; this.native = (url, success, fail, post, options) => { this.fail = fail; requests.push({ url, success, fail, options, network: this }); }; this.clear = () => { this.cleared++; if (this.fail) this.fail({ status: 0 }); }; },
         Activity: { push: params => calls.push(params), backward: () => calls.push('back') },
@@ -30,7 +48,7 @@ function harness(ready = true, jquery = false) {
     const context = vm.createContext({ window, document, DOMParser, URL, Promise, console, setTimeout: (fn, ms) => { const id = ++timerId; timers.set(id, { fn, ms }); return id; }, clearTimeout: id => timers.delete(id) });
     vm.runInContext(core, context); vm.runInContext(adapter, context);
     function create(params = {}) { const c = new components.ua_three_sources(params); c.activity = { loader: value => calls.push({ loader: value }) }; const root = c.create(); document.body.appendChild(root); c.start(); return { c, root }; }
-    return { window, L, context, document, Event, requests, components, controllers, menus, calls, listeners, timers, create };
+    return { window, L, context, document, Event, requests, components, controllers, menus, calls, listeners, timers, scrolls, create };
 }
 test('registers once and handles the app ready event', async () => {
     const h = harness(false); assert.equal(h.menus.length, 0); h.window.appready = true; h.listeners.app[0]({ type: 'ready' });
@@ -48,6 +66,22 @@ test('D-pad moves through the visible rows without private Navigator APIs', () =
     h.controllers.content.down(); assert.equal(h.calls.filter(c => c && c.focused).at(-1).focused, rows[1]);
     h.controllers.content.down(); assert.equal(h.calls.filter(c => c && c.focused).at(-1).focused, rows[2]);
     h.controllers.content.up(); assert.equal(h.calls.filter(c => c && c.focused).at(-1).focused, rows[1]);
+});
+
+test('long search keeps the selected row inside the viewport in both directions', async () => {
+    const h = harness(); const { root } = h.create({ mode: 'catalog', provider: 'uaserials', query: 'готель' });
+    h.requests[0].success(Array.from({ length: 20 }, (_, i) => '<div class="short-item"><a href="/' + (100 + i) + '-hotel.html">a</a><div class="short-title">Готель ' + i + '</div></div>').join(''));
+    await flush();
+    const rows = [...root.querySelectorAll('.ua3-row')];
+    function assertVisible(index) {
+        assert.equal(h.calls.filter(c => c && c.focused).at(-1).focused, rows[index]);
+        const top = 80 + index * 100 - h.scrolls[0].position();
+        assert.ok(top >= 0 && top + 100 <= 600, 'selected row ' + index + ' must stay fully visible, top=' + top);
+    }
+    for (let i = 1; i < rows.length; i++) { h.controllers.content.down(); assertVisible(i); }
+    assert.ok(h.scrolls[0].position() > 1000, 'the list must move, not only its focus');
+    for (let i = rows.length - 2; i >= 0; i--) { h.controllers.content.up(); assertVisible(i); }
+    assert.equal(h.scrolls[0].position(), 0);
 });
 test('the public Controller enter handler activates the selected row', () => {
     const h = harness(); h.create();
