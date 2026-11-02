@@ -1,0 +1,13 @@
+{
+  "name": "lampa-ukrainian-sources",
+  "version": "0.1.1",
+  "private": true,
+  "description": "One local Lampa plugin for UASerials, UAKino and Teleportal",
+  "scripts": {
+    "test": "node --test test/*.test.cjs",
+    "build": "node build.cjs"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.15"
+  }
+}
