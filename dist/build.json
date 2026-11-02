@@ -1,15 +1,15 @@
 {
   "version": "0.1.1",
-  "bytes": 38066,
-  "sha256": "974d3c1958142391b1fedf3f03eda367d4f6eb64c77d2bc44107f09a1240fa53",
+  "bytes": 37522,
+  "sha256": "f681eb66248eeeec2661b19b32e2a2844fd06c49a80c3bdde5de61309030db12",
   "files": [
     {
       "path": "src/core.js",
-      "sha256": "131afa58f99b41f7d4882c898af1270cd2d80c71b12cdee059f2f8b771f7a55c"
+      "sha256": "9f0d03791a5b5969b8a7f4743110abb66ecf507807b36492197678468e1af262"
     },
     {
       "path": "src/lampa.js",
-      "sha256": "1a90147a4d7df6dc758268aef4d6c06a7396c8131449ffd0bc2bda9edc0b0a90"
+      "sha256": "f7a87cd4e7f21a4a7b3ba527bf5ab248c9692b499dc23d4c976d2a13e199e065"
     }
   ]
 }

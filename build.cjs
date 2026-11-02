@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const files = ['src/core.js', 'src/lampa.js'];
-const code = files.map(f => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n');
+const code = files.map(f => fs.readFileSync(path.join(__dirname, f), 'utf8').replace(/\r\n/g, '\n')).join('\n');
 const metadata = {
     version: require('./package.json').version,
     bytes: Buffer.byteLength(code),
